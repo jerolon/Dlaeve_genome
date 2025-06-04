@@ -28,6 +28,8 @@ module load juicer/1.5.6 UCSC-executables/12may2022
 #
 # Write your commands in the next line
 python --version
-export PATH=$PATH:/mnt/Timina/alfredvar/jmiranda/80-Own_Scripts/81_bash/misc
-faSplit sequence /mnt/Timina/alfredvar/jmiranda/20-Transcriptomic_Bulk/26-Genome/slugProject/0_assembly/derLae1_hic.fasta 64 genome_fragment_
+export PATH=$PATH:/path_to_modified_generate_site_positions_script/misc
+#Not necessary, but it really speeds things up a lot, and the generated site files can be combined afterwards by simple concatenation into derLae1_hic_PhaseGen.txt
+faSplit sequence /somepath/0_assembly/derLae1_hic.fasta 64 genome_fragment_
+#Use xargs to parallelize this stuff
 find . -name "genome_fragment*"   | xargs basename -s ".fa" | xargs -I{} -n 1 -P 16 generate_site_positions.py PhaseGen {} {}.fa
