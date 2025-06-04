@@ -1,0 +1,33 @@
+#!/bin/bash
+# Run job through bash shell
+#$ -S /bin/bash
+#
+# Your job name
+#$ -N ocutsites
+#
+# Use current working directory
+#$ -cwd
+#
+# Join stdout and stderr
+#$ -j y
+#
+# Send an email after the job has finished
+#$ -m e
+#$ -M yourmail@yourdomain.com
+#
+# If modules are needed, source modules environment (Do not delete the next line):
+. /etc/profile.d/modules.sh
+#
+# Add any modules you might require:
+module load juicer/1.5.6 UCSC-executables/12may2022
+#
+# pe (Parallel environment)request a parallel environment (MPI, OpenMP). Set your number of requested slots here.
+#$ -pe openmp 16
+#
+#$ -l mf=16G
+#
+# Write your commands in the next line
+python --version
+export PATH=$PATH:/mnt/Timina/alfredvar/jmiranda/80-Own_Scripts/81_bash/misc
+faSplit sequence /mnt/Timina/alfredvar/jmiranda/20-Transcriptomic_Bulk/26-Genome/slugProject/0_assembly/derLae1_hic.fasta 64 genome_fragment_
+find . -name "genome_fragment*"   | xargs basename -s ".fa" | xargs -I{} -n 1 -P 16 generate_site_positions.py PhaseGen {} {}.fa
