@@ -1,7 +1,7 @@
 # Dlaeve_genome
 Scripts used in the paper in Genes, Genomes and Genetics by Miranda-Rodriguez et al. 2025
 
-##Assembly.  Figure 1 and supplementary Figure 1
+## Assembly.  Figure 1 and supplementary Figure 1
 The PacBio sequence was assembled with Verkko. The final contig assembly is available at zenodo 
 10.5281/zenodo.15594897
 
@@ -82,7 +82,7 @@ juicer.sh -g derLae1_hic -s PhaseGen -z $genoma -p $gsizes -y $restriction_sites
 ### 3d-dna chromosome assembly
 The elegant scripts by (Dudchenko et al., Science, 2017) only need awk installed and java to run juicebox for the manipulation of *.hic files. The use of `parallel` also speeds things up.
 The 3D-DNA pipeline was used to error-correct, anchor, order and orient the pieces in the draft assembly. The 3D-DNA visualization module, in conjunction with Juicer Tools, was used to create contact maps for the draft and the final genome assemblies. 
-
+Already the "round 0" of 3D-DNA results in an assembly with 31 chromosomes. The resolution parameters just give a balance between how much repeat or exogenous sequence is included in the scaffolds. This is is one reason why we took care to figure out what is in the unplaced scaffolds after the assembly. And why we aligned the chromosomes to closely related genomes for quality control.
 ```
 module load parallel/20180122
 java -version
