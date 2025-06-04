@@ -93,6 +93,14 @@ draft=/pathtogenome/0_assembly/derLae1_hic.fasta
 run-asm-pipeline.sh -i 13000 -r 2 --sort-output --fast-start --editor-coarse-resolution 50000 --editor-coarse-stringency 15 --polisher-coarse-stringency 15 --polisher-coarse-resolution 100000 --splitter-coarse-resolution 500000 --build-gapped-map --editor-repeat-coverage 12 $draft /path_to_juicer_output/merged_nodups.txt
 ```
 
+After reviewing the resulting *.hic file, export the new assembly file, that can be used to get the final maps and sequences.
+```
+draft=/path_to_genome/0_assembly/derLae1_hic.fasta
+export PATH=$PATH:/pathtogenome/3d-dna
+run-asm-pipeline-post-review.sh --sort-output --build-gapped-map -r derLae1_hic.rawchrom.review.assembly $draft /path_to_juicer_output/merged_nodups.txt
+
+```
+
 
 
 
