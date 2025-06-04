@@ -42,13 +42,57 @@ HinfI — GANTC
   }
 ```
 
-To get the cut sites, you have to think about the HiC protocol. Check the cut sites for every restriction enzyme, and see how it would cut and see how both ends would be 3' end filled. For example, HinfI cuts at G^ANTC. If you take both strands and fill them to the 3' you will see that you have an end 1 "5'...GANT3'" and end 2 "5'GANT3'". Then, if you take all the combinations (substituting N by A,T,G,C) and taking into account all four restriciton enzymes, you get the possible sites:
-
-(CTAAGATC|CTTAGATC|CTCAGATC|CTGAGATC|GATCGATC|TTAGATC|GAATGATC|GATTGATC|GACTGATC|GAGTGATC|CTAATAAG|CTTATAAG|CTCATAAG|CTGATAAG|GATCTAAG|TTATAAG|GAATTAAG|GATTTAAG|GACTTAAG|GAGTTAAG|CTAATTAG|CTTATTAG|CTCATTAG|CTGATTAG|GATCTTAG|TTATTAG|GAATTTAG|GATTTTAG|GACTTTAG|GAGTTTAG|CTAATCAG|CTTATCAG|CTCATCAG|CTGATCAG|GATCTCAG|TTATCAG|GAATTCAG|GATTTCAG|GACTTCAG|GAGTTCAG|CTAATGAG|CTTATGAG|CTCATGAG|CTGATGAG|GATCTGAG|TTATGAG|GAATTGAG|GATTTGAG|GACTTGAG|GAGTTGAG|CTAATAA|CTTATAA|CTCATAA|CTGATAA|GATCTAA|TTATAA|GAATTAA|GATTTAA|GACTTAA|GAGTTAA|CTAAAATC|CTTAAATC|CTCAAATC|CTGAAATC|GATCAATC|TTAAATC|GAATAATC|GATTAATC|GACTAATC|GAGTAATC|CTAAATTC|CTTAATTC|CTCAATTC|CTGAATTC|GATCATTC|TTAATTC|GAATATTC|GATTATTC|GACTATTC|GAGTATTC|CTAAACTC|CTTAACTC|CTCAACTC|CTGAACTC|GATCACTC|TTAACTC|GAATACTC|GATTACTC|GACTACTC|GAGTACTC|CTAAAGTC|CTTAAGTC|CTCAAGTC|CTGAAGTC|GATCAGTC|TTAAGTC|GAATAGTC|GATTAGTC|GACTAGTC|GAGTAGTC).
-
 When ready, just run the preparatory script in your favorite environment. We use Sun Grid Engine to manage our HPC, so you might have to adapt the script to the specific resources. From now one, we just input the general command lines and modules used.
 
 `qsub dpnindex.sge`
+
+Next, customize the juicer.sh script if necessary for your specific protocol. To get the cut sites, you have to think about the HiC protocol. Check the cut sites for every restriction enzyme, and see how it would cut and see how both ends would be 3' end filled. For example, HinfI cuts at G^ANTC. If you take both strands and fill them to the 3' you will see that you have an end 1 "5'...GANT3'" and end 2 "5'GANT3'". Then, if you take all the combinations (substituting N by A,T,G,C) and taking into account all four restriciton enzymes, you get the possible sites:
+
+```
+## Set ligation junction based on restriction enzyme
+if [ -z "$ligation" ]
+then
+    case $site in
+        HindIII) ligation="AAGCTAGCTT";;
+        DpnII) ligation="GATCGATC";;
+        MboI) ligation="GATCGATC";;
+        NcoI) ligation="CCATGCATGG";;
+        none) ligation="XXXX";;
+        PhaseGen) ligation="(CTAAGATC|CTTAGATC|CTCAGATC|CTGAGATC|GATCGATC|TTAGATC|GAATGATC|GATTGATC|GACTGATC|GAGTGATC|CTAATAAG|CTTATAAG|CTCATAAG|CTGATAAG|GATCTAAG|TTATAAG|GAATTAAG|GATTTAAG|GACTTAAG|GAGTTAAG|CTAATTAG|CTTATTAG|CTCATTAG|CTGATTAG|GATCTTAG|TTATTAG|GAATTTAG|GATTTTAG|GACTTTAG|GAGTTTAG|CTAATCAG|CTTATCAG|CTCATCAG|CTGATCAG|GATCTCAG|TTATCAG|GAATTCAG|GATTTCAG|GACTTCAG|GAGTTCAG|CTAATGAG|CTTATGAG|CTCATGAG|CTGATGAG|GATCTGAG|TTATGAG|GAATTGAG|GATTTGAG|GACTTGAG|GAGTTGAG|CTAATAA|CTTATAA|CTCATAA|CTGATAA|GATCTAA|TTATAA|GAATTAA|GATTTAA|GACTTAA|GAGTTAA|CTAAAATC|CTTAAATC|CTCAAATC|CTGAAATC|GATCAATC|TTAAATC|GAATAATC|GATTAATC|GACTAATC|GAGTAATC|CTAAATTC|CTTAATTC|CTCAATTC|CTGAATTC|GATCATTC|TTAATTC|GAATATTC|GATTATTC|GACTATTC|GAGTATTC|CTAAACTC|CTTAACTC|CTCAACTC|CTGAACTC|GATCACTC|TTAACTC|GAATACTC|GATTACTC|GACTACTC|GAGTACTC|CTAAAGTC|CTTAAGTC|CTCAAGTC|CTGAAGTC|GATCAGTC|TTAAGTC|GAATAGTC|GATTAGTC|GACTAGTC|GAGTAGTC)";;
+        *)  ligation="XXXX"
+            echo "$site not listed as recognized enzyme. Using $site_file as site file"
+            echo "Ligation junction is undefined"
+    esac
+fi
+
+```
+
+Use this modified juicer.sh script as above and run with. The genome assembly cookbook mentions to finish at the early stage to get only the `merged_nodups.txt` file, which is the only thing we need to start the chromosome assembly:
+
+```
+module load bwa/0.7.17 samtools/1.20
+juserdir=/path/juicer-1.6/CPU/
+export PATH=$PATH:$juserdir
+genoma=/pathtogenome/0_assembly/derLae1_hic.fasta
+gsizes=/pathtogenome/0_assembly/derLae1_hic.chrom.sizes
+restriction_sites=/results_of_generate_site_script/derLae1_hic_PhaseGen.txt
+juicer.sh -g derLae1_hic -s PhaseGen -z $genoma -p $gsizes -y $restriction_sites -D $juserdir -S early -t 60
+```
+
+### 3d-dna chromosome assembly
+The elegant scripts by (Dudchenko et al., Science, 2017) only need awk installed and java to run juicebox for the manipulation of *.hic files. The use of `parallel` also speeds things up.
+The 3D-DNA pipeline was used to error-correct, anchor, order and orient the pieces in the draft assembly. The 3D-DNA visualization module, in conjunction with Juicer Tools, was used to create contact maps for the draft and the final genome assemblies. 
+
+```
+module load parallel/20180122
+java -version
+awk -V | head -n 1
+sort --version | head -n 1
+export PATH=$PATH:/path_to_3ddna/3d-dna
+draft=/pathtogenome/0_assembly/derLae1_hic.fasta
+run-asm-pipeline.sh -i 13000 -r 2 --sort-output --fast-start --editor-coarse-resolution 50000 --editor-coarse-stringency 15 --polisher-coarse-stringency 15 --polisher-coarse-resolution 100000 --splitter-coarse-resolution 500000 --build-gapped-map --editor-repeat-coverage 12 $draft /path_to_juicer_output/merged_nodups.txt
+```
+
 
 
 
