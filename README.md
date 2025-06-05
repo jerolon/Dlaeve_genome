@@ -1,6 +1,7 @@
-# Dlaeve_genome
+# Deroceras laeve genome
 Scripts used in the paper in Genes, Genomes and Genetics by Miranda-Rodriguez et al. 2025
 
+- [Lastz alignments](#lastz-alignments-of-deroceras-assembly)
 ## Assembly.  Figure 1 and supplementary Figure 1
 The PacBio sequence was assembled with Verkko. The final contig assembly is available at zenodo 
 10.5281/zenodo.15594897
@@ -106,7 +107,7 @@ Finally, to get the data on Hi-C coverage for Figure 1A and B, we use juicebox_t
 bash /path_to_3ddna/3d-dna/visualize/juicebox_tools.sh dump norm SCALE $hic_file assembly BP 1000 "coverage_1kb.wig"
 ```
 
-### LastZ self alignment
+### LastZ alignments of Deroceras assembly
 
 
 
