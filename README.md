@@ -135,6 +135,6 @@ BuildDatabase -name dlaeve_repmod -engine ncbi derLae1_hic.spiraliaMasked.fasta
 RepeatModeler -pa 60 -database dlaeve_repmod -LTRStruct
 ```
 
-
-
+This outputs the sequences of de novo identified repeat elements. RepeatModeller runs a simple repeat classifier that reports the repeat family as >rnd-N_family-MMMM#LTR/ERV or similar. However, for non-model organisms this classifier is not good enough and 1110 out of 1705 are classified as "Unknown". These sequences were extracted and classified with [TEclass](https://www.bioinformatics.uni-muenster.de/tools/teclass//index.hbi?). The results were combined with this 
+[script](https://github.com/jerolon/Dlaeve_genome/blob/main/Repeats/TEclass_changefa.pl) to add the TEclass prediction with the highest probability to each Unknown familiy. These are identified in the final dlaeve-families.fa library because they contain a string like \[Classified by TEclass with prob=0.476\].
 
