@@ -138,7 +138,7 @@ NA      NA
 2419    11203910
 NA      NA
 ```
-Where every two rows represent an alignment segment, the numbers in the first column represent the start and end coordinates of the alignment in the A fulica assembly and the second column are the start and end of each segment in each Deroceras laeve scaffold.
+Where every two rows represent an alignment segment, the numbers in the first column represent the start and end coordinates of the alignment in the A fulica assembly and the second column are the start and end of each segment in each Deroceras laeve scaffold. These csv files, and two tables with the cromosome and scaffold sizes for D laeve and A fulica are all that is needed to reproduce the dotplot of whole genome alignment with this [R script](https://github.com/jerolon/Dlaeve_genome/blob/main/Alignments/plotAlignments.R)
 
 ### Repeat identification with RepeatMasker and Tandem Repeat Finder
 
