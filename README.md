@@ -117,6 +117,29 @@ We use a HARD masked version of the Achatina fulica fasta file, that can be obta
 
 Since the repeats were masked in the Achatina genome, we proceeded to do repeatmasking of the Deroceras laeve assembly. This was done in three steps, to get a hard masked file, but it was later analyzed and expanded and is decribed in a different section of the paper, so if you are interested in the details, go to the [repeats section](#repeat-identification-with-repeatmasker-and-tandem-repeat-finder).
 
+In short, after RepeatModeler and RepeatMasker, we run a tandem repeat finder identification round and use this masked genome for the whole genome alignments. We again use the strategy of splitting the genome by chromosome or scaffold to parallelize and speed things up, so in the chromosomes/ directory are fasta files like HiC_scaffold_1 ... HiC_scaffold_3497. Another time saving strategy is to keep in `Scaffolds_NOT100p_repeats.txt` the names of the HiC scaffolds that are not completely covered by interspersed or tandem repeats. This list is very easy to obtain with UCSCs `faSize -veryDetailed chromosomes/*` and simple filters.
+
+```
+module load lastz/1.04.15 parallel/20180122
+fulica=/path_to_afulica_genome/Achatina_rebuild.fasta.HARD.mask
+mkdir toFulica
+parallel --colsep=" " --will-cite --jobs 80% -a Scaffolds_NOT100p_repeats.txt "lastz ${fulica}[multiple] chromosomes/{1}.fa --output=toFulica/{1}.axt --step=20 --gfextend --chain --gapped --format=axt --notransition --allocate:traceback=1.99G --rdotplot=toFulica/{1}.csv"
+```
+
+The axt format is cool to check out the alignment sequences, although they occupy a lot of space. What is used to plot the alignments are the individual csv files. There is a csv file for each HiC scaffold listed in  `Scaffolds_NOT100p_repeats.txt` with the form
+
+`head toFulica/HIC_SCAFFOLD_1.csv`
+```
+seq1    HIC_SCAFFOLD_1
+2200    11203684
+2413    11203897
+NA      NA
+2414    11203905
+2419    11203910
+NA      NA
+```
+Where every two rows represent an alignment segment, the numbers in the first column represent the start and end coordinates of the alignment in the A fulica assembly and the second column are the start and end of each segment in each Deroceras laeve scaffold.
+
 ### Repeat identification with RepeatMasker and Tandem Repeat Finder
 
 First, we used a [repeat library from DFAM](https://www.dfam.org/browse?clade=2697495&clade_ancestors=true&clade_descendants=true) that included the curated repeats of the ancestors and descendants of the spiralia taxon. We installed the DFAM tools in the HPC cluster using singularity. The `-s` option uses a slow a bit more sensitive search.
