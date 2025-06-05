@@ -138,3 +138,32 @@ RepeatModeler -pa 60 -database dlaeve_repmod -LTRStruct
 This outputs the sequences of de novo identified repeat elements. RepeatModeller runs a simple repeat classifier that reports the repeat family as >rnd-N_family-MMMM#LTR/ERV or similar. However, for non-model organisms this classifier is not good enough and 1110 out of 1705 are classified as "Unknown". These sequences were extracted and classified with [TEclass](https://www.bioinformatics.uni-muenster.de/tools/teclass//index.hbi?). The results were combined with this 
 [script](https://github.com/jerolon/Dlaeve_genome/blob/main/Repeats/TEclass_changefa.pl) to add the TEclass prediction with the highest probability to each Unknown familiy. These are identified in the final dlaeve-families.fa library because they contain a string like \[Classified by TEclass with prob=0.476\].
 
+https://zenodo.org/records/15603231
+
+Subsequently, the RepeatModeler library is used to run RepeatMasker on the genome previously masked of spiralia repeats.
+
+```
+RepeatMasker spiralia/derLae1_hic.spiraliaMasked.fasta -pa 16 -s -gff -no_is -dir repModeller -lib repModeller/dlaeve-families.fa'
+```
+
+The resulting *.cat files from each stage (DFAM-spiralia, RepeatModeller) are concatenated in that order, so that the curated DFAM repeats are annotated with piority as suggested by [Darren Card](https://darencard.net/blog/2017-05-16-maker-genome-annotation/). The concatenated round2Repeatmasker.cat.gz file is then processed by the script ProcessRepeats. This output is the result shown in the paper for the RepeatModeller pipeline. In total, the combination masks 44.34% of total bases, but as stated in the text, a simple look into the masked sequence shows that tandem, simple and low complexity repeats are not masked by this method.
+
+```
+ProcessRepeats -a round2RepeatMasker.cat.gz
+```
+
+Therefore, we run a third round, on the fasta genome `derLae1_hic.2ndroundRMasker.fasta` masked by RepeatMasker as just described in the previous section, looking only for tandem repeats. The fasta file is split by chromosomes or scaffolds in order to parallelize an run faster.
+
+```
+module load UCSC-executables/12may2022/ parallel/20180122 gcc/5.1.0 bedtools/2.27.1
+
+mkdir trftempBorrar
+echo "split in SplitChromosomes"
+faSplit byname derLae1_hic.2ndroundRMasker.fasta SplitChromosomes/
+mkdir masked
+parallel --progress --eta "trfBig {} masked/{/.}.masked.fasta -bedAt=masked/{/.}.bed -tempDir=trftempBorrar -trf=trf409.linux64 -l=6" ::: SplitChromosomes/*.fa
+cat masked/*.masked.fasta > derLae.3rdRoundTRF.masked.fasta
+cat masked/*.bed > derLae.tandemRepeats.bed
+bedtools sort -chrThenSizeD -i derLae.tandemRepeats.bed > derLae.TRFsofrted.bed
+```
+
