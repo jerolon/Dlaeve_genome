@@ -96,11 +96,17 @@ run-asm-pipeline.sh -i 13000 -r 2 --sort-output --fast-start --editor-coarse-res
 After reviewing the resulting *.hic file, export the new assembly file, that can be used to get the final maps and sequences.
 ```
 draft=/path_to_genome/0_assembly/derLae1_hic.fasta
-export PATH=$PATH:/pathtogenome/3d-dna
+export PATH=$PATH:/path_to_3ddna/3d-dna
 run-asm-pipeline-post-review.sh --sort-output --build-gapped-map -r derLae1_hic.rawchrom.review.assembly $draft /path_to_juicer_output/merged_nodups.txt
-
 ```
 
+Finally, to get the data on Hi-C coverage for Figure 1A and B, we use juicebox_tools to get a wig file with the coverage values at 1kb resolution.
+
+```
+bash /path_to_3ddna/3d-dna/visualize/juicebox_tools.sh dump norm SCALE $hic_file assembly BP 1000 "coverage_1kb.wig"
+```
+
+### LastZ self alignment
 
 
 
