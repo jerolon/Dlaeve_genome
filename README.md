@@ -109,9 +109,31 @@ bash /path_to_3ddna/3d-dna/visualize/juicebox_tools.sh dump norm SCALE $hic_file
 
 ### LastZ alignments of Deroceras assembly
 
+The genome of Achatina fulica is available at [this link](https://gigadb.org/dataset/100647).
+For this Figure S1, we need [the fasta assembly](https://s3.ap-northeast-1.wasabisys.com/gigadb-datasets/live/pub/10.5524/100001_101000/100647/Achatina_rebuild.fasta) and the [repeat element annotation gff file](https://s3.ap-northeast-1.wasabisys.com/gigadb-datasets/live/pub/10.5524/100001_101000/100647/repeat.gff)
+Sometimes, the chromosomes names are changed after the article submission, and you have to change them in either the GFF file, or the fasta file, whichever is more convenient with a custom script or bash command.
 
+We use a HARD masked version of the Achatina fulica fasta file, that can be obtained by processing with bedtools or UCSC's `maskOutFa Achatina_rebuild.fasta processed_repeat_gff.bed -clip -soft Achatina_rebuild.fasta.soft.mask` and then `maskOutFa Achatina_rebuild.fastasoft.mask hard Achatina_rebuild.fasta.HARD.mask`.
 
+Since the repeats were masked in the Achatina genome, we proceeded to do repeatmasking of the Deroceras laeve assembly. This was done in three steps, to get a hard masked file, but it was later analyzed and expanded and is decribed in a different section of the paper, so if you are interested in the details, go to the [repeats section](#repeat-identification-with-repeatmasker-and-tandem-repeat-finder).
 
+### Repeat identification with RepeatMasker and Tandem Repeat Finder
+
+First, we used a [repeat library from DFAM](https://www.dfam.org/browse?clade=2697495&clade_ancestors=true&clade_descendants=true) that included the curated repeats of the ancestors and descendants of the spiralia taxon. We installed the DFAM tools in the HPC cluster using singularity. The `-s` option uses a slow a bit more sensitive search.
+
+```
+module load singularity/3.7.0
+bindings=/path_to_hic_assembly:/genome,/working_directory:/data,/path_to_dfam_library:/Libraries
+
+singularity exec --bind $bindings /cm/shared/apps/singularity/images/3.7.0/dfam-tetools-latest.sif bash -c 'cd /data && RepeatMasker /genome/derLae1_hic.FINAL.fasta -pa 5 -s -gff -no_is -lib /Librerias/Spiralia_Dfam.lib'
+```
+
+This step only masks 10% of the genome. The logic is to hard mask these curated previously annotated repeats, and feed the resulting sequence to repeat modeller. In order to save time and avoid identifying de novo repeats that are already known. The genome hard masked with the Spiralian DFMA repeats is then fed to repeat masker, including the LTR modelling pipeline. The next commands were also run with singularity, but this is ommited for clarity.
+
+```
+BuildDatabase -name dlaeve_repmod -engine ncbi derLae1_hic.spiraliaMasked.fasta
+RepeatModeler -pa 60 -database dlaeve_repmod -LTRStruct
+```
 
 
 
