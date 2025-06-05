@@ -138,7 +138,38 @@ NA      NA
 2419    11203910
 NA      NA
 ```
-Where every two rows represent an alignment segment, the numbers in the first column represent the start and end coordinates of the alignment in the A fulica assembly and the second column are the start and end of each segment in each Deroceras laeve scaffold. These csv files, and two tables with the cromosome and scaffold sizes for D laeve and A fulica are all that is needed to reproduce the dotplot of whole genome alignment with this [R script](https://github.com/jerolon/Dlaeve_genome/blob/main/Alignments/plotAlignments.R)
+Where every two rows represent an alignment segment, the numbers in the first column represent the start and end coordinates of the alignment in the A fulica assembly and the second column are the start and end of each segment in each Deroceras laeve scaffold. These csv files, and two tables with the cromosome and scaffold sizes for D laeve and A fulica are all that is needed to reproduce the dotplot of whole genome alignment with this [R script](https://github.com/jerolon/Dlaeve_genome/blob/main/Alignments/plotAlignments.R).
+
+### LastZ D laeve whole genome self-alignment
+
+Generally the same strategy. Use the hardmasked genome from before and split the query by scaffolds to be able to parallelize and speed things up. We use the same modules
+`
+module load gcc/5.1.0 bedtools/2.27.1 lastz/1.04.15 parallel/20180122
+`
+
+We further use a feature of LastZ to mask all sequences that appear in an alignment more than N times. This is called [self masking](https://www.bx.psu.edu/~rsharris/lastz/README.lastz-1.04.15.html#adv_selfmasking). Using N=3. Also `--allocate:traceback=1.99G` or it runs out of memory because there are too many possible seeds in a self-alignment.
+```
+parallel --colsep=" " --will-cite --jobs 80% -a Scaffolds_NOT100p_repeats.txt "lastz ${assembly}[multiple]   chromosomes/{1}.fa --format=none --gfextend --nochain --gapped --masking=3 --progress+masking=10k --outputmasking+:soft=lastz_identified_repeats/lastz_repeats_{1}.dat --step=20 --allocate:traceback=1.99G"
+#Chromosomes 1,9,14,15 were masked with notransition nogaped because they took more than 25 hours
+```
+
+With the info contained in the *.dat files, we soft mask genome sequence (which was already hard masked with repeat masker). This is only to avoid too many seeds and saving memory and processing time, these soft masked sequences can still align as mentioned in the lastz documentation.
+
+```
+###The sed line turns the .dat file into a bed like file to soft mask the chrmosomes wiith bedtools #Save the soft masked parts to to the directory chromosomes_lastzmask
+echo "finished lastz soft mask. Masking with bedtools"
+parallel --colsep=" " --will-cite --jobs 80% -a Scaffolds_NOT100p_repeats.txt "bedtools maskfasta -soft -fi chromosomes/{1}.fa -fo chromosomes_lastzmask/{1}.fa -bed <(sed 's/ /\t/g' lastz_identified_repeats/lastz_repeats_{1}.dat)
+##use the lastz info to mask the file with the complete genome
+echo "finished masking pieces. Masking big"
+cat lastz_identified_repeats/lastz_repeats_*.dat | sed 's/ /\t/g' > big_mask.bed
+bedtools maskfasta -soft -fi $assembly -fo genoma_lastz_softmasked.fa -bed big_mask.bed
+```
+And use lastz for self alignment
+```
+#Use parallel to independently align each scaffold to the whole genome. Save as axt (optional) and as csv (easy to plot in R)
+#Here you can play with the parameters --chain --nochain and others, depending on your purposes.
+parallel --colsep=" " --will-cite --jobs 80% -a Scaffolds_NOT100p_repeats.txt "lastz genoma_lastz_softmasked.fa[multiple] chromosomes_lastzmask/{1}.fa --format=axt --output=toSelfgap/{1}.axt --rdotplot=toSelfgap/self_{1}.csv --gfextend --nochain --gapped --step=20 --allocate:traceback=1.99G"
+```
 
 ### Repeat identification with RepeatMasker and Tandem Repeat Finder
 
