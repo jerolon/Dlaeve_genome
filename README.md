@@ -298,12 +298,31 @@ cat masked/*.bed > derLae.tandemRepeats.bed
 bedtools sort -chrThenSizeD -i derLae.tandemRepeats.bed > derLae.TRFsofrted.bed
 ```
 
+### HiTE repeat identification
+
+We used [HiTE: a fast and accurate dynamic boundary adjustment approach for full-length transposable element detection and annotation](https://pmc.ncbi.nlm.nih.gov/articles/PMC11219922/) as an alternative pipeline for interspersed repeat annotation:
+
+```
+bindings=/path_to_hic_assembly/:/data
+
+singularity run -B $bindings hite_3.2.0.sif bash -c ' cd /data && python /HiTE/main.py \
+--genome /data/derLae1_hic.FINAL.fasta \
+--outdir /data/repeats/HiTE \
+--thread 80 \
+--domain 1 \
+--plant 0 \
+--annotate 1 \
+--intact_anno 1'
+```
+
+
+
 ## Genome annotation and gene function
 
 We ran BRAKER3 with the following settings:
 
 ```
-braker.pl --species=derLae1 --genome=derLae1_hic.FINAL.fasta --rnaseq_sets_dirs=/Transcripts
+braker.pl --species=derLae1 --genome=/path_to_hic_assembly/derLae1_hic.FINAL.fasta --rnaseq_sets_dirs=/Transcripts
  --rnaseq_sets_ids=Dc2 Dc3, Dc4, Dc6, Di1, Di4, Di5, Di6, Di7 --prot_seq=Metazoa.fa –gff
 ```
 
