@@ -315,7 +315,9 @@ singularity run -B $bindings hite_3.2.0.sif bash -c ' cd /data && python /HiTE/m
 --intact_anno 1'
 ```
 
+HiTE automatically runs RepeatMasker with the `--annotate 1` option. According to the logs, the version that came bundled with HiTE 3.2 was RepeatMasker 4.1.1. It uses its own output file `confident_TE.cons.fa` as a custom repeat library. It outputs a HiTE.out and HiTE.gff file showing the location of the annotated Transposable elements. The option `--intact_anno 1` outputs a HiTE_intact.sorted.gff3 of elements that are judged to be intact copies. We use the *.out file with all the confident repeats to get the divergence landscapes shown in Figure 3 A-D, because it makes sense to use all. For the genomic repeat density in Figure 3 E-J, and Figure S2, we use the intact transponsable elements because they are fewer in number and possibly more interesting.
 
+The repeat divergence landscapes can be calculated with RepeatMasker own auxiliary scripts and they output an interactive html file that can be checked [here](https://jerolon.github.io/derLaeve_rm.html) for the [Repeats identified in the previous pipeline](#repeatmasker-and-tandem-repeat-finder) and [here] for the repeats identified by HiTE. Comparing them side by side shows the higher sensitivity of the RepeatModeller pipeline, that can detect highly divergent LINEs.
 
 ## Genome annotation and gene function
 
