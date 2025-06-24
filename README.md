@@ -2,6 +2,8 @@
 Scripts used in the paper in Genes, Genomes and Genetics by Miranda-Rodriguez et al. 2025
 
 - [Lastz alignments](#lastz-alignments-of-deroceras-assembly)
+- [small RNA annotation](#small-rna-annotation)
+  
 ## Assembly.  Figure 1 and supplementary Figure 1
 The PacBio sequence was assembled with Verkko. The final contig assembly is available at zenodo 
 10.5281/zenodo.15594897
@@ -220,4 +222,8 @@ cat masked/*.masked.fasta > derLae.3rdRoundTRF.masked.fasta
 cat masked/*.bed > derLae.tandemRepeats.bed
 bedtools sort -chrThenSizeD -i derLae.tandemRepeats.bed > derLae.TRFsofrted.bed
 ```
+## small RNA annotation
+
+The annotation of micro-RNAs and piwi-interacting RNAs is available at
+[https://github.com/pepap/DL-genome-sRNAs/tree/main](https://github.com/pepap/DL-genome-sRNAs/tree/main)
 
