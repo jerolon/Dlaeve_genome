@@ -2,10 +2,44 @@
 Scripts used in the paper in Genes, Genomes and Genetics by Miranda-Rodriguez et al. 2025
 
 - [Lastz alignments](#lastz-alignments-of-deroceras-assembly)
+- [Repeat identification](#repeat-identification)
+- [Genome annotation and gene functions](#genome-annotation-and-gene-function)
 - [small RNA annotation](#small-rna-annotation)
   
 ## Assembly.  Figure 1 and supplementary Figure 1
-The PacBio sequence was assembled with Verkko. The final contig assembly is available at zenodo 
+The PacBio sequence was assembled with Verkko. 
+
+To resolve gaps in the assembly, we aligned ONT reads to the Verkko-generated assembly graph using
+[GraphAligner](https://genomebiology.biomedcentral.com/articles/10.1186/s13059-020-02157-2). Since
+the Verkko output is homopolymer compressed, we first converted the ONT fastq file to fasta then applied
+homopolymer compression to the ONT reads using `seqtk hpc` command. The resulting alignment is
+recorded in the `graphaligner.gaf` file, we manually inspected to identify the correct ONT reads traversals
+across the gap regions. These validated paths were then extracted and provided to Verkko and an input for
+gap patching. The following command was used to conduct the alignment:
+
+```
+GraphAligner -t 24 -g assembly.homopolymer-compressed.gfa -f ont_hpc.fasta -a graphaliner.gaf --seeds-
+mxm-windowsize 5000 --seeds-mxm-length 30 --seeds-mem-count 10000 --bandwidth 15 --multimap-
+score-fraction 0.99 --precise-clipping 0.85 --min-alignment-score 5000 --hpc-collapse-reads --discard-
+cigar --clip-ambiguous-ends 100 --overlap-incompatible-cutoff 0.15 --max-trace-count 5 --mem-index-no-
+wavelet-tree
+```
+
+An example of a read spanning a gap in the assembly appears as follows:
+
+```
+1880c0f9-b3d2-4e41-a606-b3cf4de00428 133770 59 130460 + <utig4-577<gapont1-1-len-46542-cov-3>utig4-1953 98221777
+98091240 98221777 0 0 60
+```
+
+In this example, the read `1880c0f9-b3d2-4e41-a606-b3cf4de00428` aligns across two unigs `utig4-577`
+and `utig4-1953`, indicating a correct traversal that is used to patch the gap. The read spanning the gap is
+46kb (46542) long. You then prepare a tab delimited `paths.gaf` file as follows: `Chr1 <utig4-
+577<gapont1-1-len-46542-cov-3>utig4-1953 Hap`. Run Verkko again using `--paths path.gaf`.
+
+The resulting assembly will have all the gaps patched.
+### 
+The final contig assembly is available at zenodo 
 10.5281/zenodo.15594897
 
 This file is doubly compressed to save space, first unzip to get a 2bit file:
@@ -173,7 +207,9 @@ And use lastz for self alignment
 parallel --colsep=" " --will-cite --jobs 80% -a Scaffolds_NOT100p_repeats.txt "lastz genoma_lastz_softmasked.fa[multiple] chromosomes_lastzmask/{1}.fa --format=axt --output=toSelfgap/{1}.axt --rdotplot=toSelfgap/self_{1}.csv --gfextend --nochain --gapped --step=20 --allocate:traceback=1.99G"
 ```
 
-### Repeat identification with RepeatMasker and Tandem Repeat Finder
+## Repeat identification
+
+### RepeatMasker and Tandem Repeat Finder
 
 First, we used a [repeat library from DFAM](https://www.dfam.org/browse?clade=2697495&clade_ancestors=true&clade_descendants=true) that included the curated repeats of the ancestors and descendants of the spiralia taxon. We installed the DFAM tools in the HPC cluster using singularity. The `-s` option uses a slow a bit more sensitive search.
 
@@ -222,6 +258,24 @@ cat masked/*.masked.fasta > derLae.3rdRoundTRF.masked.fasta
 cat masked/*.bed > derLae.tandemRepeats.bed
 bedtools sort -chrThenSizeD -i derLae.tandemRepeats.bed > derLae.TRFsofrted.bed
 ```
+
+## Genome annotation and gene function
+
+We ran BRAKER3 with the following settings:
+
+```
+braker.pl --species=derLae1 --genome=derLae1_hic.FINAL.fasta --rnaseq_sets_dirs=/Transcripts
+ --rnaseq_sets_ids=Dc2 Dc3, Dc4, Dc6, Di1, Di4, Di5, Di6, Di7 --prot_seq=Metazoa.fa –gff
+```
+
+`Metazoa.fa` is a fasta file downloaded from OrthoDB.
+
+### Gene functions
+
+Gene annotations were generated using eggNOG-mapper. We used the coding protein FASTA file
+generated after the annotation and aligned it to the eggNOG5 database. Best hit gene names were extracted
+from the table and added to the GFF/GTF files.
+
 ## small RNA annotation
 
 The annotation of micro-RNAs and piwi-interacting RNAs is available at
