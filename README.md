@@ -34,18 +34,17 @@ An example of a read spanning a gap in the assembly appears as follows:
 
 In this example, the read `1880c0f9-b3d2-4e41-a606-b3cf4de00428` aligns across two unigs `utig4-577`
 and `utig4-1953`, indicating a correct traversal that is used to patch the gap. The read spanning the gap is
-46kb (46542) long. You then prepare a tab delimited `paths.gaf` file as follows: `Chr1 <utig4-
-577<gapont1-1-len-46542-cov-3>utig4-1953 Hap`. Run Verkko again using `--paths path.gaf`.
+46kb (46542) long. You then prepare a tab delimited `paths.gaf` file as follows: `Chr1 <utig4-577<gapont1-1-len-46542-cov-3>utig4-1953 Hap`. Run Verkko again using `--paths path.gaf`.
 
 The resulting assembly will have all the gaps patched.
-### 
+
 The final contig assembly is available at zenodo 
 10.5281/zenodo.15594897
 
 This file is doubly compressed to save space, first unzip to get a 2bit file:
 `gunzip derlae1_hic.2bit.gz`
 
-Then you can get the UCSC executables https://hpc.nih.gov/apps/Genome_Browser.html to get a fasta file and a file with the contig sizes:
+Then you can get the [UCSC executables](https://hpc.nih.gov/apps/Genome_Browser.html) to get a fasta file and a file with the contig sizes:
 
 `twoBitInfo derlae1_hic.2bit derLae1_hic.chrom.sizes`
 
@@ -142,6 +141,46 @@ Finally, to get the data on Hi-C coverage for Figure 1A and B, we use juicebox_t
 ```
 bash /path_to_3ddna/3d-dna/visualize/juicebox_tools.sh dump norm SCALE $hic_file assembly BP 1000 "coverage_1kb.wig"
 ```
+
+### Assembly statistics
+
+N50 statistics were calculated using quast version 5.2.0.
+Additionally, BUSCO was run in genome mode in two steps, as adviced in the developer documentation:
+
+```
+#modules
+module load anaconda3/2021.05
+source activate busco542
+
+#copy the augustus_config_path into a location with write permissions
+export AUGUSTUS_CONFIG_PATH=/custom/augustus_config_path
+
+busco -i /path_to_genome/0_assembly/derLae1_hic.fasta \
+      --auto-lineage-euk --augustus --long \
+      --augustus_parameters='--progress=true,--AUGUSTUS_CONFIG_PATH=/custom/augustus_config_path/' \
+      -l metazoa_odb10 -m genome \
+      -o genome_metazoa_BUSCO -c 30
+
+#optimize and train augustus with the results from the first run
+module load augustus/3.3.2
+export PATH=/pathto/augustus/3.3.2/scripts:$PATH
+
+optimize_augustus.pl --kfold=30 --cpus=30 --species=BUSCO_genome_metazoa_BUSCO --metapars=/custom/augustus_config_path/species/BUSCO_genome_metazoa_BUSCO/BUSCO_genome_metazoa_BUSCO_metapars.cfg ./genome_metazoa_BUSCO/run_metazoa_odb10/augustus_output/training_set.db
+
+etraining --species=BUSCO_genome_metazoa_BUSCO ./genome_metazoa_BUSCO/run_metazoa_odb10/augustus_output/training_set.db
+```
+
+Next, run a second round of BUSCO with either the metazoan or mollusca database:
+
+```
+export AUGUSTUS_CONFIG_PATH=/custom/augustus_config_path
+
+busco -i /path_to_genome/0_assembly/derLae1_hic.fasta \
+      -l [mollusca_odb10,metazoa_odb_10] -m genome \
+      --out busco_[mollusca,metazoa]_round2 -c 30 --augustus_species BUSCO_genome_metazoa_BUSCO --augustus_parameters='--progress=true,--AUGUSTUS_CONFIG_PATH=/custom/augustus_config_path/'
+
+```
+
 
 ### LastZ alignments of Deroceras assembly
 
