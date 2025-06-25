@@ -258,6 +258,23 @@ Or try a 2D density plot, which we did not include in the manuscript:
 p <- filter(alignments, width >= minalsize) %>% ggplot() + geom_bin2d(aes(x= laeve_ass_0, y = laevew_0), bins = 3000) + theme_bw() + scale_fill_gradient2(low = "lightgray", high = "red", mid = "blue", space = "Lab", midpoint = 2000)
 ```
 
+### Synteny comparison to other limacidae whole genome assemblies
+
+The chromosome-sized Hi-C scaffolds of *Deroceras laeve* are numbered according to size, with HiCscaffold1 the longest and HiCscaffold31 the shortest chromosomes. To aid future evolutionary comparisons with the closely related *Deroceras lasithionense*, we use [Ragtag](https://github.com/malonge/RagTag?tab=readme-ov-file) to find homologous chromosomes between the two species. We use `ragtag-2.1.0` and `minimap2/2.24` and exclude unplaced scaffolds in both species:
+
+```
+ragtag.py scaffold ../Dlasithionense/GCA_964271515.2_xgDerLasi3.1_genomic.fna derLae1_hic.FINAL.fasta -e dlasi_unanchored.txt  -j dlaeve_unanchored.txt -t 2
+
+```
+
+The resulting `ragtag.scaffold.fasta` contains the *Deroceras laeve* sequences in the ordering and orientation defined by the *Deroceras lasithionense* genome. There is no change in the sequence, but Chr1,2,3..etc, are not ordered by length anymore, they are just the homologs of the respective *Deroceras lasithionense* chromosomes. The `ragtag.scaffold.agp` file is provided as supplementary material and can be used to transform GFF files from the Hi-C coordinates to the Chromosome coordinates as:
+
+```
+ragtag.py updategff [-c] <genes.gff> <ragtag.agp>
+```
+
+
+
 ## Mitochondrial genome
 
 To identify the mitochondrial genome, we used a reference that is available from NCBI [NC_072953.1](https://www.ncbi.nlm.nih.gov/nuccore/NC_072953.1/) and used blastn to get matches from our genome. This gave several Kb length hits to HiC_scaffold_1563. Next, we used lastz with default parameters to align NC_072953.1 to scaffold 1563 to get the plot in Figure 2B. From this, the concatamerization was obvious. Next, we loaded NC_072953.1 in SnapGene along with all its annotated features from NCBI directly and used the blast and lastz results as a guide to align Scaffold 1563 along its length. From figure 2C, and observing the sequence, it was obvious that scaffold 1563 covered the mitochondrial genome almost twice, and even though it had some mutations relative to the reference, scaffold 1563 constituted a single sequence. As stated in the text, we used snapgene `Replace Original with Aligned` function to get a single, circularized, annotated mitochondrial sequence for the INB-UNAM strain of *Deroceras laeve*.
