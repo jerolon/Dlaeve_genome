@@ -201,7 +201,7 @@ mkdir toFulica
 parallel --colsep=" " --will-cite --jobs 80% -a Scaffolds_NOT100p_repeats.txt "lastz ${fulica}[multiple] chromosomes/{1}.fa --output=toFulica/{1}.axt --step=20 --gfextend --chain --gapped --format=axt --notransition --allocate:traceback=1.99G --rdotplot=toFulica/{1}.csv"
 ```
 
-The axt format is cool to check out the alignment sequences, although they occupy a lot of space. What is used to plot the alignments are the individual csv files. There is a csv file for each HiC scaffold listed in  `Scaffolds_NOT100p_repeats.txt` with the form
+The axt format is good to check out the alignment sequences, although they occupy a lot of space. What is used to plot the alignments are the individual csv files. There is a csv file for each HiC scaffold listed in  `Scaffolds_NOT100p_repeats.txt` with the form
 
 `head toFulica/HIC_SCAFFOLD_1.csv`
 ```
@@ -239,12 +239,30 @@ echo "finished masking pieces. Masking big"
 cat lastz_identified_repeats/lastz_repeats_*.dat | sed 's/ /\t/g' > big_mask.bed
 bedtools maskfasta -soft -fi $assembly -fo genoma_lastz_softmasked.fa -bed big_mask.bed
 ```
-And use lastz for self alignment
+And use lastz for self alignment. The use of the `--inner=2000` option does not seem to have made that much difference. What is important is `--nochain` because chaining would just give you the trivial alignment and not find much outside the diagonal. It is also possible to use the options `--self --notrivial` but we have trouble with lastz accepting a multifasta file in that mode.
+
 ```
 #Use parallel to independently align each scaffold to the whole genome. Save as axt (optional) and as csv (easy to plot in R)
 #Here you can play with the parameters --chain --nochain and others, depending on your purposes.
-parallel --colsep=" " --will-cite --jobs 80% -a Scaffolds_NOT100p_repeats.txt "lastz genoma_lastz_softmasked.fa[multiple] chromosomes_lastzmask/{1}.fa --format=axt --output=toSelfgap/{1}.axt --rdotplot=toSelfgap/self_{1}.csv --gfextend --nochain --gapped --step=20 --allocate:traceback=1.99G"
+parallel --colsep=" " --will-cite --jobs 80% -a Scaffolds_NOT100p_repeats.txt "lastz genoma_lastz_softmasked.fa[multiple] chromosomes_lastzmask/{1}.fa --format=axt --output=toSelfgap/{1}.axt --rdotplot=toSelfgap/self_{1}.csv --gfextend --inner=200 --nochain --gapped --step=20 --allocate:traceback=1.99G"
 ```
+
+the directory toSelfgap has a self_HiC_scaffold_[NN].csv file for each scaffold with the segments aligned to the whole genome. To convert this into the dotplot in Figure 1C, use the R script [plotSelfAlignment.R](Alignments/plotSelfAlignment.R). It is pretty straight forward, you can play with plotting just segments of different sizes or playing with the color and alpha (which in this plot, depend on aligned segment size) in this line:
+
+```
+minalsize <- 200
+p <- filter(alignments, width >= minalsize) %>% ggplot() + geom_point(aes(x= laeve_ass_0, y = laevew_0, alpha = width, col = log(width)), size = 0.1) + scale_color_gradient2(low = "lightgray", high = "black", mid = "gray", space = "Lab", midpoint = log(10), limit = c(0, log(500))) + theme_bw()
+```
+Or try a 2D density plot, which we did not include in the manuscript:
+```
+p <- filter(alignments, width >= minalsize) %>% ggplot() + geom_bin2d(aes(x= laeve_ass_0, y = laevew_0), bins = 3000) + theme_bw() + scale_fill_gradient2(low = "lightgray", high = "red", mid = "blue", space = "Lab", midpoint = 2000)
+```
+
+## Mitochondrial genome
+
+To identify the mitochondrial genome, we used a reference that is available from NCBI [NC_072953.1](https://www.ncbi.nlm.nih.gov/nuccore/NC_072953.1/) and used blastn to get matches from our genome. This gave several Kb length hits to HiC_scaffold_1563. Next, we used lastz with default parameters to align NC_072953.1 to scaffold 1563 to get the plot in Figure 2B. From this, the concatamerization was obvious. Next, we loaded NC_072953.1 in SnapGene along with all its annotated features from NCBI directly and used the blast and lastz results as a guide to align Scaffold 1563 along its length. From figure 2C, and observing the sequence, it was obvious that scaffold 1563 covered the mitochondrial genome almost twice, and even though it had some mutations relative to the reference, scaffold 1563 constituted a single sequence. As stated in the text, we used snapgene `Replace Original with Aligned` function to get a single, circularized, annotated mitochondrial sequence for the INB-UNAM strain of Deroceras laeve.
+
+
 
 ## Repeat identification
 
