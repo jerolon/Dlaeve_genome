@@ -266,8 +266,12 @@ To identify the mitochondrial genome, we used a reference that is available from
 
 Apart from the reference *D. laeve* mitochondial genome, we use the organlle genomes of [*Deroceras reticulatum* NC035495](https://www.ncbi.nlm.nih.gov/nuccore/NC035495) and [*Ambigolimax valentianus* NC072954]. Since the three sequences come from the [NCBI Organelle RefSeq Project](https://www.ncbi.nlm.nih.gov/bioproject/PRJNA927338) they are standardized to start at the first base of the Cox1 gene. Therefore, in SnapGene, where you can choose the start base of a circular chromosome, we also fix the start of the sequence of our strain in this way and export as fasta. Finally, the mitochondrial genome of [*Deroceras lasithionense*](https://www.ncbi.nlm.nih.gov/nuccore/OZ186211), has a similar problem to ours, in that it is a raw Hi-C assembly, however, this genome is 32Kb, compared to the 14Kb of the rest, and moreover, it does not seem to be concatamerized in the coding sequences, the expansion corresponds to the control sequences. In any case, we proceded to find the start of Cox1 and make that the start of the sequence. We also found the trnK(ttt) gene right before Cox1 and make that the end of the sequence. With this alignment, we produce the tree in Figure 2F. Finally, we align each pair of protein coding sequences from both strains of Deroceras laeve (NC_072953.1 & this study) and we calculate the dN/dS rate of non-synonymous to synonymous substitutions. 
 
-Alignment is performed for each protein and output in fasta format using mafft with default parameters, e.g. `mafft ATP6.fasta > ATP6_aligned.fasta`. Then, each alignment is processed with `codeml`, part of the paml suite using this [bash script](Mitochondria/runodeml.sh). 
+Alignment is performed for each protein and output in fasta format using mafft with default parameters, e.g. `mafft ATP6.fasta > ATP6_aligned.fasta`. Then, each alignment is processed with `codeml`, part of the paml suite using this [bash script](Mitochondria/runcodeml.sh). 
 
+## small RNA-seq mapping and annotation
+
+The annotation of micro-RNAs and piwi-interacting RNAs is available at
+[https://github.com/pepap/DL-genome-sRNAs/tree/main](https://github.com/pepap/DL-genome-sRNAs/tree/main)
 
 ## Repeat identification
 
@@ -358,8 +362,6 @@ singularity exec --bind $bindings /cm/shared/apps/singularity/images/3.7.0/dfam-
 
 The  they output an interactive html file that can be checked [here](https://jerolon.github.io/derLaeve_rm.html) for the [Repeats identified in the previous pipeline](#repeatmasker-and-tandem-repeat-finder) and [here] for the repeats identified by HiTE. Comparing them side by side shows the higher sensitivity of the RepeatModeller pipeline, that can detect highly divergent LINEs. For the paper, we use the information contained in the *.divsum file to make our own repeat landscapes with custom colors and different sub-families using the R script [repeatLandscape_hite.R](Repeats/repeatLandscape_hite.R). To know the line where the relevant info starts, use `grep "Coverage for each repeat class and divergence (Kimura)" *.divsum -n`.
 
-
-
 ## Genome annotation and gene function
 
 We ran BRAKER3 with the following settings:
@@ -376,9 +378,4 @@ braker.pl --species=derLae1 --genome=/path_to_hic_assembly/derLae1_hic.FINAL.fas
 Gene annotations were generated using eggNOG-mapper. We used the coding protein FASTA file
 generated after the annotation and aligned it to the eggNOG5 database. Best hit gene names were extracted
 from the table and added to the GFF/GTF files.
-
-## small RNA annotation
-
-The annotation of micro-RNAs and piwi-interacting RNAs is available at
-[https://github.com/pepap/DL-genome-sRNAs/tree/main](https://github.com/pepap/DL-genome-sRNAs/tree/main)
 
