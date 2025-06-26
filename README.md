@@ -490,5 +490,58 @@ module load circos/0.69-6
 circos -m minimal.conf
 ```
 
+## Computational Analysis of gene Family Evolution CAFE
+
+The modeling of gene death and birth of cafe requires two inputs:
+
+- data file containing gene family sizes for the taxa included in the phylogenetic tree
+- a Newick formatted phylogenetic tree, including branch lengths
+
+We got both inputs from an analysis with [REvolutionH-tl](https://pypi.org/project/revolutionhtl/) v1.2.1. We downloaded the proteomes for the 20 mollusc species listed in the paper, prioritizing those that had a gene function annotation and that had chromosome level assemblies. If the proteome fastas are in a directory called "fastas", then just run:
+
+```
+python -m revolutionhtl -F fastas/ -aligner ./diamond
+```
+What we are interested in is the file with the orthogroups, called `tl_project.orthogroups.tsv`. With awk, you can get the 8 orthogroups that are present in 21 species and in only a single copy in each species. We concatenate the protein sequences of each species to get a 21 sequence multiple alignment. This we feed into mega, and use the existing timetree data to calibrate our tree and make it ultrametric. 
+
+The tree from the alignment, in a file called `alignment_tree32.nwk`:
+
+```
+((((octopusv:4.817078221324674E-4,octopuss:4.817078221324674E-4):0.019398973370483914,octopusb:0.019880681192616382):0.17999732899453316,sepia:0.19987801018714954):0.19884011940522636,(((((((bulinus:0.10219381015688857,biomphalaria:0.10219381015688857):0.042040746567826234,lymnaea:0.1442345567247148):0.045584409147542165,(deroceras:0.11384349241064046,arion:0.11384349241064046):0.07597547346161651):0.018560467238716877,(((elysiacr:0.06731468295623363,elysiach:0.06731468295623363):0.024538045341106374,elysiam:0.09185272829734001):0.03228735808346893,plakobranchus:0.12414008638080894):0.08423934673016491):0.1348301234997853,pomacea:0.34320955661075914):0.027817703938370963,patella:0.3710272605491301):0.011359908816451492,((((pinctada:0.2251489825179422,crassostrea:0.2251489825179422):0.05604425308536087,argopecten:0.28119323560330306):0.03182111250119379,mytilus:0.31301434810449685):0.023132755113110304,(ruditapes:0.2233497732263692,dreissena:0.2233497732263692):0.11279732999123795):0.046240066147974435):0.01633096022679431):0.0;
+```
+
+If you input the species names in [timetree](https://timetree.org/) you dont get all the species, but you do get information on many nodes enough to calibrate. Run [make_timetree.R](Annotation/make_timetree.R) to get the ultrametric tree. All that is left is to transform `tl_project.orthogroups.tsv` that lists all the genes for a given orthogroup and a species, into the table that is needed for cafe, using the script [parse_orthogroups.pl](Annotations/parse_orthogroups.pl).
+
+`./parse_orthogroups.pl --file tl_project.orthogroups.tsv --output mollusca_gene_families.tab`
+
+Now just run `cafe cafe_script.sh`. Make sure the names of the columns in `mollusca_gene_families.tab` match those of the newick tree in cafe_script.sh:
+```
+#!shell
+date
+
+#specify data file, p-value threshold, # of threads to use, and log file
+load -i mollusca_gene_families.tab -p 0.01 -t 10 -l log.txt
+
+#the phylogenetic tree structure with branch lengths from make_timetree.R
+tree ((((octopusv:4,octopuss:4):141,octopusb:145):142,sepia:287):256,(((((((bulinus:69.3,biomphalaria:69.3):69.3,lymnaea:139):69.3,(deroceras:130,arion:130):78):28,(((elysiacr:59,elysiach:59):59,elysiam:118):59,plakobranchus:177):59):100,pomacea:336):100,patella:436):100,((((pinctada:326,crassostrea:326):101,argopecten:427):1,mytilus:428):12,(ruditapes:303,dreissena:303):137):96):7):0;
+
+#search for 2 parameter model
+lambda -s 
+
+#report
+report cafereport
+
+date
+```
+
+Here is a handy perl script [summarise_cafe_report.pl](Annotation/summarise_cafe_report.pl) to transform the cafe report into a table containing the orthogroup, the node it corresponds to, the number of genes, the change from the ancestor node and the p-value. Filtering the output from this script `perl summarise_cafe_report.pl cafe.report | grep deroceras` gives the Table S8.
+
+
+
+
+
+
+
+
 
 
