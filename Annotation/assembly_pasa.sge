@@ -1,0 +1,39 @@
+#!/bin/bash
+# Run job through bash shell
+#$ -S /bin/bash
+#
+# Your job name
+#$ -N output_pasa
+#
+# Use current working directory
+#$ -cwd
+#
+# Join stdout and stderr
+#$ -j y
+#
+# Send an email after the job has finished
+#$ -m e
+#$ -M yourmail@yourdomain.com
+#
+# If modules are needed, source modules environment (Do not delete the next line):
+. /etc/profile.d/modules.sh
+#
+# Add any modules you might require:
+module load singularity/3.7.0
+#
+# pe (Parallel environment)request a parallel environment (MPI, OpenMP). Set your number of requested slots here.
+#$ -pe openmp 70
+#
+#$ -l mf=10G
+#
+# Write your commands in the next line
+
+bindings=/mnt/:/mnt/,/$(pwd):/data,$(pwd)/temp:/tmp
+
+singularity exec --bind $bindings \
+/singularity/images/3.7.0/pasapipeline_2.5.3.sif /usr/local/src/PASApipeline/bin/seqclean /data/transcripts.fasta -c 70
+
+singularity -v exec --bind $bindings --env TMPDIR=/data/temp/ /cm/shared/apps/singularity/images/3.7.0/pasapipeline_2.5.3.sif \
+ /usr/local/src/PASApipeline/Launch_PASA_pipeline.pl -c /data/alignAssembly.config -R -C -g /data/derLae1_fullsoftmask.fasta \
+-t /data/transcripts.fasta.clean -T -u /data/transcripts.fasta --TDN /data/tdn.accs --ALIGNERS blat,gmap,minimap2 --CPU 70 --transcribed_is_aligned_orient --TRANSDECODER
+
