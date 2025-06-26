@@ -259,6 +259,18 @@ Or try a 2D density plot, which we did not include in the manuscript:
 p <- filter(alignments, width >= minalsize) %>% ggplot() + geom_bin2d(aes(x= laeve_ass_0, y = laevew_0), bins = 3000) + theme_bw() + scale_fill_gradient2(low = "lightgray", high = "red", mid = "blue", space = "Lab", midpoint = 2000)
 ```
 
+### Cognate chromosomes
+
+Run lastz again, but get the results in a custom *.tsv format
+
+```
+parallel --colsep=" " --will-cite --jobs 80% -a Scaffolds_NOT100p_repeatslowercase.txt "lastz genoma_lastz_softmasked.fa[multiple] chromosomes_lastzmask/{1}.fa --format=general:name1,start1,end1,name2,start2,end2,strand1,strand2,identity,length1 --output=$sdir/{1}.tsv --gfextend --nochain --gapped --step=20 --inner=2000 --allocate:traceback=1.99G"
+```
+
+We will also need a file **derLae_Full_completeStats.txt** that you can get with UCSCs `faSize -veryDetailed chromosomes_lastzmask/*` containing not only the size of chromosomes but also, how many bases are masked. To get the cognates, that is sufficient. To get the genic vs intergenic info in the cognates, you need the `dlaeve_txDb_R_GenomicFeatures.db"` database that we get in section [Circos plot of ohnologs paralogs and clusters in Figure 5](#circos-plot-of-ohnologs-paralogs-and-clusters-in-figure-5). 
+
+The script [cognates_from_self_alignment.R](Alignments/cognates_from_self_alignment.R) results in the table of cognate chromosome pairs and Figure S3.
+
 ### Synteny comparison to other limacidae whole genome assemblies
 
 The chromosome-sized Hi-C scaffolds of *Deroceras laeve* are numbered according to size, with HiCscaffold1 the longest and HiCscaffold31 the shortest chromosomes. To aid future evolutionary comparisons with the closely related *Deroceras lasithionense*, we use [Ragtag](https://github.com/malonge/RagTag?tab=readme-ov-file) to find homologous chromosomes between the two species. We use `ragtag-2.1.0` and `minimap2/2.24` and exclude unplaced scaffolds in both species:
@@ -467,7 +479,7 @@ jaccard_sparse <- function(i, j, matrix) {
 
 Try all 100,000,000+ combinations of genes, and report only the pairs of genes that substantially share orthologs (i.e. jaccard > 0.5). This script took around two weeks in the cluster. 
 
-### Circos plot of ohnologs, paralogs and clusters. Figure 5.
+### Circos plot of ohnologs paralogs and clusters in Figure 5
 
 We make a soft link to the annotation gff3 file called `Dlaeve_annotated.gff3`.
 With the script [create_circos_links_orthologs.R](Annotation/create_circos_links_orthologs.R), we import the gff3 to make a TxDb file that we later use for other analyses, like the hox-cluster plot and some intron-exon statistics mentioned in the text. We also import the tsv file with the homologous pairs from *D. laeve* and their jaccard score, to convert to a file that is readable by circos, `links.txt`.
