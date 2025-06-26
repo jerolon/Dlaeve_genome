@@ -467,4 +467,28 @@ jaccard_sparse <- function(i, j, matrix) {
 
 Try all 100,000,000+ combinations of genes, and report only the pairs of genes that substantially share orthologs (i.e. jaccard > 0.5). This script took around two weeks in the cluster. 
 
+### Circos plot of ohnologs, paralogs and clusters. Figure 5.
+
+We make a soft link to the annotation gff3 file called `Dlaeve_annotated.gff3`.
+With the script [create_circos_links_orthologs.R](Annotation/create_circos_links_orthologs.R), we import the gff3 to make a TxDb file that we later use for other analyses, like the hox-cluster plot and some intron-exon statistics mentioned in the text. We also import the tsv file with the homologous pairs from *D. laeve* and their jaccard score, to convert to a file that is readable by circos, `links.txt`.
+
+Another file we prepare for the Circos plot, and for Table S7, is the clusters of genes, that in less than 5Mb have 5 or more members that are connected between them by having common orthologs. In the script [ortholog_density_clustering.R](Annotation/ortholog_density_clustering.R) follows these steps:
+
+- Load the ortholog pairs with their jaccard simmilarity. Load the TxDb object with the gene coordinates.
+- Get only pairs genes that share the same chromosome.
+- Make weights for each connected pair as jaccard_simmilarity/log2(genomic distance)
+- Make a graph (network) and put the weights to the connections
+- Using those weights, cluster the graph with louvain algorithm
+- Filter the clusters with more than 5 members, that span less than 5Mb, and get their probable gene function from the functions.tsv file from Eggnog
+
+Finally, when manually looking for Hox genes, it was obvious that most were in either chromosome 6 or chromosome 25, so we manually prepared a file with their coordinates with grep and awk called `hox_cluster.txt`.
+
+The file [minimal.conf](Annotation/minimal.conf) has the instructions for circos to make the plot in figure 5:
+
+```
+module load circos/0.69-6
+circos -m minimal.conf
+```
+
+
 
