@@ -2,6 +2,7 @@
 Scripts used in the paper in Genes, Genomes and Genetics by Miranda-Rodriguez et al. 2025
 
 - [Lastz alignments](#lastz-alignments-of-deroceras-assembly)
+- [Mitochondrial Genome](#mitochondrial-genome)
 - [Repeat identification](#repeat-identification)
 - [Genome annotation and gene functions](#genome-annotation-and-gene-function)
 - [small RNA annotation](#small-rna-annotation)
@@ -273,8 +274,6 @@ The resulting `ragtag.scaffold.fasta` contains the *Deroceras laeve* sequences i
 ragtag.py updategff [-c] <genes.gff> <ragtag.agp>
 ```
 
-
-
 ## Mitochondrial genome
 
 To identify the mitochondrial genome, we used a reference that is available from NCBI [NC_072953.1](https://www.ncbi.nlm.nih.gov/nuccore/NC_072953.1/) and used blastn to get matches from our genome. This gave several Kb length hits to HiC_scaffold_1563. Next, we used lastz with default parameters to align NC_072953.1 to scaffold 1563 to get the plot in Figure 2B. From this, the concatamerization was obvious. Next, we loaded NC_072953.1 in SnapGene along with all its annotated features from NCBI directly and used the blast and lastz results as a guide to align Scaffold 1563 along its length. From figure 2C, and observing the sequence, it was obvious that scaffold 1563 covered the mitochondrial genome almost twice, and even though it had some mutations relative to the reference, scaffold 1563 constituted a single sequence. As stated in the text, we used snapgene `Replace Original with Aligned` function to get a single, circularized, annotated mitochondrial sequence for the INB-UNAM strain of *Deroceras laeve*.
@@ -379,6 +378,14 @@ singularity exec --bind $bindings /cm/shared/apps/singularity/images/3.7.0/dfam-
 
 The  they output an interactive html file that can be checked [here](https://jerolon.github.io/derLaeve_rm.html) for the [Repeats identified in the previous pipeline](#repeatmasker-and-tandem-repeat-finder) and [here] for the repeats identified by HiTE. Comparing them side by side shows the higher sensitivity of the RepeatModeller pipeline, that can detect highly divergent LINEs. For the paper, we use the information contained in the *.divsum file to make our own repeat landscapes with custom colors and different sub-families using the R script [repeatLandscape_hite.R](Repeats/repeatLandscape_hite.R). To know the line where the relevant info starts, use `grep "Coverage for each repeat class and divergence (Kimura)" *.divsum -n`.
 
+### Plot of intact transposable elements: Figure 3 and Figure S2
+
+No we have all the files needed to reproduce the figures 3 and S2 that show the genomic density of different kind of reapeats along the chromosomes and unplaced scaffolds. We also use the Table S6, see [small RNA-seq mapping and annotation](#small-rna-seq-mapping-and-annotation) to plot the location of piRNA clusters. The script to make this plots is [plotRepeatKaryo.R](Repeats/plotRepeatKaryo.R). The input needed, apart from the table of chromosome sizes is:
+
+- `HiTE_intact.sorted.gff3` file with Intact TEs we get from HiTE.
+- `derLae.TRFsorted.bed` from Tandem Repeat Finder
+- `derLae1_hic.FINAL.fasta` The genome assembly we use to see the GC % of TRFs and which TRFs contain telomeric motifs.
+
 ## Genome annotation and gene function
 
 We ran BRAKER3 with the following settings:
@@ -388,11 +395,76 @@ braker.pl --species=derLae1 --genome=/path_to_hic_assembly/derLae1_hic.FINAL.fas
  --rnaseq_sets_ids=Dc2 Dc3, Dc4, Dc6, Di1, Di4, Di5, Di6, Di7 --prot_seq=Metazoa.fa –gff
 ```
 
-`Metazoa.fa` is a fasta file downloaded from OrthoDB.
+`Metazoa.fa` is a fasta file downloaded from OrthoDB, and the directory Transcripts contains RNA-seq data from body wall and tail experiments.
+
+### PASA assemblies
+
+As described in the text, RNA-seq data comes from two different labs, one is Single-end and the other is Paired-end, are different in coverage and cover different tissues. What they have in common is that they retain strand information. Therefore, we used TRINITY to assemble separately *de novo* transcriptomes for each batch. We also make a Genome guided transcriptome using the head, juvenile and ovotestis dataset.
+
+We used [PASA](https://github.com/PASApipeline/PASApipeline/wiki) to align the transcripts to the genome and combine them into assemblies.
+The transcriptomes are concatenated into a single `transcripts.fasta`. The IDs of *de novo* assemblies are listed in `tdn.accs`. The script to align and build the database is [assembly_pasa.sge](Annotation/assembly_pasa.sge).
+
+This gets us a database of all transcripts, with splicing info and transdecoder rating of their protein-coding potential.
+
+### Evidence modeller
+
+We combine the Braker3 annotations with the pasa Assemblies using Evidence modeller: 
+```
+module load evidence-modeler/2.1.0
+
+EVidenceModeler \
+    --sample_id derLae \
+    --weights weightsfile.txt \
+    --genome derLae1_fullsoftmask.fasta \
+    --gene_predictions gene_predictions.gff \
+    --transcript_alignments ../pasa_db.db.pasa_assemblies.gff3 \
+    --repeat Full_mask/Dlaeve.full_mask.out.gff \
+    --segmentSize 1000000 \
+    --overlapSize 30000 \
+```
+
+As described in the [pasa documentation](https://github.com/PASApipeline/PASApipeline/wiki/PASA_abinitio_training_sets), we extract the predicted ORFs into a GFF3 file, and we concatenate it with the GFF3 prediction from braker into the file `gene_predictions.gff`. The braker predictions have "AGAT, gmst, or GeneMark.hmm3" in the third column of the GFF3, while the pasa ORFs have "transdecoder". We also pass the GFF3 of pasa assemblies as transcript alignments to Evidence Modeller. Therefore, the weights file looks like this:
+
+```
+ABINITIO_PREDICTION     AGAT    1
+ABINITIO_PREDICTION     gmst    1
+ABINITIO_PREDICTION     GeneMark.hmm3   1
+TRANSCRIPT      assembler-pasa_db.db    10
+OTHER_PREDICTION        transdecoder    5
+```
+
+The resulting `derLae.EVM.pep` file with peptides is benchmarked against busco databases metazoa_odb10 and mollusca_odb10 and is reported in figure 4A as just **EVM**.
+
+### PASA enrichment of EVM annotation.
+
+Next, we used the PASA database generated before, to enrich and correct the EVM annotations, adding UTRs, mRNA variants, fuse split genes, etc.
+
+```
+singularity exec --bind $bindings --env TMPDIR=/data/temp/ /singularity/images/3.7.0/pasapipeline_2.5.3.sif bash -c 'cd /data && /usr/local/src/PASApipeline/Launch_PASA_pipeline.pl -c annotCompare.config -A -g derLae1_fullsoftmask.fasta -t transcripts.fasta.clean -L --annots reference.gff3 --CPU 34'
+```
+
+Where `reference.gff3` is just a soft link to the gff3 output of EVM. This results in the final annotation file we use that is reported as EVM post PASA. It is marginally better in terms of Busco scores, but it contains more transcript evidence, transcript isoforms and UTR information.
+
+We also use AGAT's [agat_sp_statistcs](https://agat.readthedocs.io/en/latest/tools/agat_sp_statistics.html) perl script to get the statistics reported in the text.
 
 ### Gene functions
 
-Gene annotations were generated using eggNOG-mapper. We used the coding protein FASTA file
-generated after the annotation and aligned it to the eggNOG5 database. Best hit gene names were extracted
-from the table and added to the GFF/GTF files.
+Gene annotations were generated using eggNOG-mapper. We used the coding protein FASTA file generated after the annotation and aligned it to the eggNOG5 database. Best hit gene names were extracted from the table and added to the GFF/GTF files.
+
+EggNog also gives the orthologs that the query matches to its database. Since it specializes in assigning fine grained orthologs to queries, we use this information to compare within our own proteome, which genes share orthologs with the script [jaccard_orthologs.R](Annotation/jaccard_orthologs.R).
+
+The construction of the matrix might seem confusing, but refer to the documentation of sparseMatrix. Basically, we construct a vector "rows" and a vector "columns", of the same length, and in each position, rows gives the gene id and columns give the EGGNOG ortholog Id. Then sparseMatrix transforms that into matrix.
+
+A function `jaccard_sparse` computes the jaccard intersection between gene i and gene j, by counting how many orthologs the two genes have in common. 
+
+```
+jaccard_sparse <- function(i, j, matrix) {
+  intersect_count <- sum(matrix[i, ] & matrix[j, ])
+  union_count <- sum(matrix[i, ] | matrix[j, ])
+  return(intersect_count / union_count)
+}
+```
+
+Try all 100,000,000+ combinations of genes, and report only the pairs of genes that substantially share orthologs (i.e. jaccard > 0.5). This script took around two weeks in the cluster. 
+
 
