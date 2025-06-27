@@ -430,6 +430,7 @@ EVidenceModeler \
     --genome derLae1_fullsoftmask.fasta \
     --gene_predictions gene_predictions.gff \
     --transcript_alignments ../pasa_db.db.pasa_assemblies.gff3 \
+    #This file is called repModellerPipeline.gff in the supplementary material
     --repeat Full_mask/Dlaeve.full_mask.out.gff \
     --segmentSize 1000000 \
     --overlapSize 30000 \
