@@ -286,6 +286,7 @@ The resulting `ragtag.scaffold.fasta` contains the *Deroceras laeve* sequences i
 ragtag.py updategff [-c] <genes.gff> <ragtag.agp>
 ```
 
+The pipeline for synteny analysis with ntsynt can be found in this repo [https://github.com/anuikils/Synteny-Analysis](https://github.com/anuikils/Synteny-Analysis)
 ## Mitochondrial genome
 
 To identify the mitochondrial genome, we used a reference that is available from NCBI [NC_072953.1](https://www.ncbi.nlm.nih.gov/nuccore/NC_072953.1/) and used blastn to get matches from our genome. This gave several Kb length hits to HiC_scaffold_1563. Next, we used lastz with default parameters to align NC_072953.1 to scaffold 1563 to get the plot in Figure 2B. From this, the concatamerization was obvious. Next, we loaded NC_072953.1 in SnapGene along with all its annotated features from NCBI directly and used the blast and lastz results as a guide to align Scaffold 1563 along its length. From figure 2C, and observing the sequence, it was obvious that scaffold 1563 covered the mitochondrial genome almost twice, and even though it had some mutations relative to the reference, scaffold 1563 constituted a single sequence. As stated in the text, we used snapgene `Replace Original with Aligned` function to get a single, circularized, annotated mitochondrial sequence for the INB-UNAM strain of *Deroceras laeve*.
@@ -388,7 +389,7 @@ echo "calculando repeatLandscape"
 singularity exec --bind $bindings /cm/shared/apps/singularity/images/3.7.0/dfam-tetools-latest.sif bash -c 'cd /data && perl /opt/RepeatMasker/util/createRepeatLandscape.pl -div derLae1_hic.FINAL.fasta.divsum -twoBit derLa1_hic.FIINAL.2bit > derLaeveHite.html'
 ```
 
-The  they output an interactive html file that can be checked [here](https://jerolon.github.io/derLaeve_rm.html) for the [Repeats identified in the previous pipeline](#repeatmasker-and-tandem-repeat-finder) and [here] for the repeats identified by HiTE. Comparing them side by side shows the higher sensitivity of the RepeatModeller pipeline, that can detect highly divergent LINEs. For the paper, we use the information contained in the *.divsum file to make our own repeat landscapes with custom colors and different sub-families using the R script [repeatLandscape_hite.R](Repeats/repeatLandscape_hite.R). To know the line where the relevant info starts, use `grep "Coverage for each repeat class and divergence (Kimura)" *.divsum -n`.
+The  they output an interactive html file that can be checked [here](https://jerolon.github.io/derLaeve_rm.html) for the [Repeats identified in the previous pipeline](#repeatmasker-and-tandem-repeat-finder) and [here](https://jerolon.github.io/derLaeveHite.html) for the repeats identified by HiTE. Comparing them side by side shows the higher sensitivity of the RepeatModeller pipeline, that can detect highly divergent LINEs. For the paper, we use the information contained in the *.divsum file to make our own repeat landscapes with custom colors and different sub-families using the R script [repeatLandscape_hite.R](Repeats/repeatLandscape_hite.R). To know the line where the relevant info starts, use `grep "Coverage for each repeat class and divergence (Kimura)" *.divsum -n`.
 
 ### Plot of intact transposable elements: Figure 3 and Figure S2
 
